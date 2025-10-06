@@ -1,0 +1,11 @@
+
+server:
+  port: 8081
+
+spring:
+  kafka:
+    bootstrap-servers: kafka:9092
+
+app:
+  topic:
+    orders: orders.v1

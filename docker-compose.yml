@@ -1,0 +1,153 @@
+#############################################
+# 🧱 DOCKER COMPOSE: KAFKA MICROSERVICES LAB
+#############################################
+# Think of this as a “movie set” 🎬 — it defines all actors (containers),
+# their roles (services), and how they talk to each other (network).
+
+services:
+  #############################################
+  # 🧩 1. Kafka Broker — The Heartbeat of the System
+  #############################################
+  kafka:
+    image: apache/kafka:3.9.1
+    container_name: kafka
+
+    environment:
+      # ⚙️ KRaft mode = Kafka without ZooKeeper (modern, simpler architecture)
+      # "broker,controller" means this node acts as both the data broker and metadata controller.
+      KAFKA_PROCESS_ROLES: "broker,controller"
+
+      # Each Kafka node must have a unique ID (like an employee badge)
+      KAFKA_NODE_ID: "1"
+
+      # Kafka controllers form a quorum (like leaders voting on cluster changes)
+      # Format: "<node_id>@<host>:<controller_port>"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+
+      # Controller listener name (internal communication channel)
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+
+      # 🎧 Define how Kafka listens for connections:
+      # 9092 = for brokers (clients), 9093 = for internal control
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+
+      # 📣 What clients (your apps) use to connect
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+
+      # Inter-broker communication uses the plaintext channel
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+
+      # ✅ Let Kafka auto-create topics when producers send new ones (for dev/demo)
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+      # Only 1 replica since this is a single-node cluster
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+
+      # 📂 Optional: directory to store persistent data
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+
+    ports:
+      # Expose broker port for host tools or Kafka UI
+      - "9092:9092"
+
+    # 🩺 Healthcheck ensures Kafka is ready before others start
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+    # 💾 Volume stores Kafka logs/data persistently even if container restarts
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+
+  #############################################
+  # 🪄 2. init-topics — Auto-create Topic Before Services Start
+  #############################################
+  init-topics:
+    image: apache/kafka:3.9.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092
+      --create --if-not-exists --topic orders.v1 --partitions 3 --replication-factor 1
+      && echo 'topics ready'"
+    restart: "no"
+
+    # 🧠 Why this exists:
+    # - Ensures the topic is created *before* microservices start sending/consuming.
+    # - Avoids race conditions where producer fails because topic doesn't exist yet.
+    #
+    # Analogy: Like setting up a meeting room before people arrive.
+
+
+  #############################################
+  # 🖥️ 3. Kafka UI — Visual Tool for Developers
+  #############################################
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      # Define a cluster connection called "local"
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    ports:
+      # Web dashboard at http://localhost:8080
+      - "8080:8080"
+
+    # 📊 Tip:
+    # - Lets you browse topics, messages, partitions, consumer groups, etc.
+    # - Great for debugging your event-driven apps.
+
+
+  #############################################
+  # 📦 4. Order Service — Kafka Producer (Sends Messages)
+  #############################################
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    depends_on:
+      init-topics:
+        condition: service_completed_successfully
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8081:8081"
+
+    # Analogy: Think of this as a “Sender” that places new orders into Kafka.
+
+
+  #############################################
+  # 📊 5. Analytics Service — Kafka Consumer (Reads Messages)
+  #############################################
+  analytics-service:
+    build:
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    depends_on:
+      init-topics:
+        condition: service_completed_successfully
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - APP_LOG_LEVEL=info
+    ports:
+      - "8082:8082"
+
+    # Analogy: Think of this as a “Listener” that receives orders
+    # and logs or analyzes them in real time.
+
+
+#############################################
+# 💾 6. Volumes — Persistent Storage
+#############################################
+volumes:
+  kafka_data:
+  # This keeps Kafka logs even if you remove/rebuild containers
+  # Think of it as Kafka’s “black box” memory.

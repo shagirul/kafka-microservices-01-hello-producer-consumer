@@ -1,0 +1,111 @@
+# ===============================
+# Java / Maven
+# ===============================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Compiled class files
+*.class
+*.log
+*.jar
+*.war
+*.ear
+
+# Maven wrapper
+.mvn/
+!/.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+
+# ===============================
+# Spring Boot
+# ===============================
+*.iml
+.idea/
+*.iws
+*.ipr
+*.sw?
+*.orig
+*.DS_Store
+*.factorypath
+out/
+build/
+logs/
+.tmp/
+
+# ===============================
+# Environment / Secrets
+# ===============================
+*.env
+.env.*
+application-*.yml
+application-*.properties
+!application-example.yml
+!application-example.properties
+
+# ===============================
+# Docker / Compose
+# ===============================
+*.pid
+*.seed
+*.bak
+*.old
+*.tar
+*.gz
+
+# Ignore Docker build cache
+**/Dockerfile*
+**/docker-compose.override.yml
+**/docker-compose.yml.save
+
+# ===============================
+# Kafka / Data Volumes
+# ===============================
+data/
+kafka-data/
+kafka-logs/
+zookeeper-data/
+zookeeper-logs/
+volumes/
+
+# ===============================
+# IDE / Editor files
+# ===============================
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+
+# VS Code
+.vscode/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Mac & Linux
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# ===============================
+# Node or Frontend (if later added)
+# ===============================
+node_modules/
+dist/
+build/
+
+# ===============================
+# Local testing artifacts
+# ===============================
+*.out
+*.tmp
+*.bak
+*.local
+*.test
+*.retry

@@ -1,0 +1,61 @@
+# ===============================================
+# 🌐 SERVER CONFIGURATION
+# ===============================================
+server:
+  port: 8082
+  # 💡 Tells Spring Boot which port this service (analytics-service)
+  # should listen on. Each microservice gets its own port.
+  # e.g. order-service runs on 8081, analytics-service runs on 8082.
+  # Think of this like assigning each service its own phone number.
+
+# ===============================================
+# ⚙️ SPRING KAFKA CONFIGURATION
+# ===============================================
+spring:
+  kafka:
+    bootstrap-servers: kafka:9092
+    # 🧩 The Kafka broker address your app connects to.
+    # "kafka" = hostname of the container (from docker-compose)
+    # "9092" = port exposed by Kafka broker.
+    #
+    # Analogy: This is like giving the consumer the address
+    # of the “post office” (Kafka broker) to collect messages from.
+
+# ===============================================
+# 🧱 APPLICATION CUSTOM CONFIG (your app-level props)
+# ===============================================
+app:
+  topic:
+    orders: orders.v1
+    # 📦 The name of the Kafka topic to subscribe to.
+    # Here, “orders.v1” is where order events (messages)
+    # are being published by the order-service.
+    #
+    # Keeping it here means we can easily change topic names later
+    # without touching code.
+
+  consumer:
+    group: analytics-consumer-group
+    # 👥 The consumer group name.
+    # All consumers in this group share the work (load-balanced).
+    # If multiple instances of analytics-service are running,
+    # each one will get a subset of messages.
+    #
+    # Analogy: Like multiple workers in the same mailroom team
+    # processing different piles of mail from the same inbox.
+
+# ===============================================
+# 🔍 ACTUATOR MANAGEMENT ENDPOINTS
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+        # 🩺 Enables Spring Boot Actuator endpoints for monitoring.
+        # “health” → used for Docker/Kubernetes health checks.
+        # “info”   → exposes app build info (like version, env, etc.).
+        #
+        # Example:
+        #   GET http://localhost:8082/actuator/health → {"status":"UP"}
+        #   GET http://localhost:8082/actuator/info   → {"app":"analytics-service"}
