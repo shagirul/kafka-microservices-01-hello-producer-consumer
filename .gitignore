@@ -57,7 +57,7 @@ application-*.properties
 *.gz
 
 # Ignore Docker build cache
-**/Dockerfile*
+#**/Dockerfile*
 **/docker-compose.override.yml
 **/docker-compose.yml.save
 
